@@ -1,13 +1,13 @@
 ---
-title: "Statistical Inference, part 1"
+title: "Central Limit Theorem and the Exponential Distribution: An Exploration Using Simulation in R"
 author: "Jen Becker"
-date: "July 22, 2015"
+date: "July 23, 2015"
 output: 
     pdf_document:
         fig_caption: yes
 ---
 
-In this paper, I will use R's exponential distribution to illustrate the predictions of the Central Limit Theorem, namely that the distribution of sample means and variances from a population is nearly normal, even if the population distribution is not normal, and that the mean of these sample measurements approximates the population's measurements with increasing accuracy as the number of samples increases.
+In this paper, I will use R's exponential distribution to illustrate the predictions of the Central Limit Theorem, namely that the distribution of sample means from a population is nearly normal, even if the population distribution is not normal.  Also, that the mean of sample variance approximates the population's variance with increasing accuracy as the number of samples increases.
 
 To simulate the exponential distribution in R, we use rexp(n, lambda) with n=40 and lambda=0.2.  Data from a single run will generally resemble an exponential distribution.  If we plot the data from 1,000 simulations of 40 exponentials, we see a much more accurate depiction of the exponential distribution.
 
@@ -28,51 +28,90 @@ for (i in 1:1000) {
 hist(alldata, main="Histogram of 1000 simulations of rexp(40,0.2)", xlab="")
 ```
 
-\pagebreak
+## R code for simulation of exponential distribution
+
+To run our analysis, we collect a large number of exponential distributions.  For each of 1,000 runs, we generate 40 numbers with an exponential distribution and calculate the mean and variance of that sample.  On each run, we also calculate and store a running mean of means -- averaging together the means we've collected so far.
+
+```{r, echo=TRUE, cache=TRUE}
+## Run 1,000 simulations with n=40.
+
+set.seed(100)        # For reproducibility
+lambda <- 0.2        # Lambda value for rexp
+n <- 40              # Number of values to generate by rexp
+simedvars <- c()     # Variance of each simulation
+simedmeans <- c()    # Mean of each simulation
+runningmean <- c()   # Running mean of the means of each simulation
+
+for (i in 1:1000) {
+    thisrun <- rexp(n, lambda)  # Run the simulation, n=40, lambda=0.2
+    simedvars <- c(simedvars, var(thisrun))
+    simedmeans <- c(simedmeans, mean(thisrun))
+    runningmean <- c(runningmean, mean(simedmeans))
+}
+```
 
 ## Mean
 
-The distribution of sample means from the simulations closely follows a normal distribution.
+The theoretical mean of an exponential distribution is 1/lambda, or `r 1/0.2` in this case.  The mean of the sample means from our 1,000 simulations of 40 exponentials is 
+
+```{r}
+mean(simedmeans)
+```
+
+This is only off by `r library(scales); percent(1-mean(simedmeans)/(1/0.2))`. 
+
+## Variance
+
+The theoretical variation of this exponential distribution is 1/(lambda^2), or `r (1/(0.2)^2)` in this case.  The mean of the sample variations from our 1,000 simulations of 40 exponentials is 
+
+```{r} 
+mean(simedvars)
+```
+
+This is only off by `r library(scales); percent(abs(1-mean(simedvars)/(1/((0.2)^2))))`.  
+
+## Standard Error
+
+The distribution of the mean of our samples of 40 exponentials have a variation that can be described through the standard devation.  This is also the standard error for the sample mean.  It should closely approximate the result of the formula
+
+$$\text{SE} = \frac{\sigma}{\sqrt{n}}$$
+
+Our sample means have a standard devation of 
+
+```{r}
+sd(simedmeans)
+```
+
+which is very nearly the calcuated value of the standard error.
+
+$$\text{SE} = \frac{\sigma}{\sqrt{n}} = \frac{5}{\sqrt{40}} = 0.7905694$$
+
+The variance of the sample means is significantly smaller than the theoretical variance for the exponential distribution.
+
+```{r}
+var(simedmeans); 1/(lambda^2)
+```
+
+## Central Limit Theorem
+
+As predicted by the Central Limit Theorem, the distribution of sample means from the simulations closely follows a normal distribution.  The distribution is centered at the theoretical mean, 5 (shown in the figure with a vertical red line).  The Q-Q plot shows that the values closely follow the expected normal distribution (shown in the figure with a red line).
 
 ```{r, echo=FALSE, fig.height=3, fig.cap="See appendix for supporting R code", fig.show='hold'}
-## Run 1,000 simulations with n=40.
-## Save the mean for each run.
-set.seed(100)
-simedmeans <- c()
-for (i in 1:1000) {
-    thisrun <- rexp(40, 0.2)
-    simedmeans <- c(simedmeans, mean(thisrun))
-}
 
 ## Graph the means for each run with a normal distribution curve
 par(mfrow=c(1,2), cex=0.5)
 hist(simedmeans, main="Means from single, n=40 rexp simulations",
      xlab="mean(rexp(40,0.2))", xlim=c(0, 2*mean(simedmeans)))
 abline(v=1/0.2, col="red")
-curve(dnorm(x, mean=mean(simedmeans), sd=sd(simedmeans))*550, add=TRUE, col="blue")
 
 qqnorm(simedmeans)
-qqline(simedmeans)
+qqline(simedmeans, col="red")
 ```
 
-While the mean of a single, n=40 simulation may vary from the population mean, as we gather more means and average them together, we can see the value approach the population mean.
+While the mean of a single, n=40 simulation may vary from the population mean, as we gather the mean from more simulations and average them together, the value approaches the population mean (shown in the figure with a horizontal red line).
 
-The theoretical mean of an exponential distribution is 1/lambda, or `r 1/0.2` in this case.  The mean of the sample means from our 1,000 simulations of 40 exponentials is `r mean(simedmeans)`.  This is only off by `r library(scales); percent(1-mean(simedmeans)/(1/0.2))`.  
-
-We can see that as more simulations are run, the mean of the sample means approaches the theoretical mean.
-
-```{r, echo=FALSE, fig.height=3, fig.width=4, fig.cap="See appendix for supporting R code"}
+```{r, echo=FALSE, fig.height=3, fig.width=4, fig.cap="See appendix for supporting R code", fig.show="asis"}
 par(cex=.5)
-## Run 1,000 simulations with n=40.
-## Keep a running mean of the means of the simulations.
-set.seed(100)
-simedmeans <- c()
-runningmean <- c()
-for (i in 1:1000) {
-    thisrun <- rexp(40, 0.2)
-    simedmeans <- c(simedmeans, mean(thisrun))
-    runningmean <- c(runningmean, mean(simedmeans))
-}
 
 ## Graph the mean of the sample means as it changes as more simulations are run
 ## with a line representing the theoretical mean.
@@ -83,82 +122,14 @@ abline(h=1/0.2, col="red")
 lines(x=1:length(runningmean), y=runningmean)
 ```
 
-\pagebreak
+\newpage
 
-## Variance
-
-```{r, echo=FALSE, cache=TRUE}
-## Run 1,000 simulations with n=40.
-## Save the variation for each run.
-set.seed(100)
-simedvars <- c()
-for (i in 1:1000) {
-    thisrun <- rexp(40, 0.2)
-    simedvars <- c(simedvars, var(thisrun))
-}
-```
-
-The theoretical variation of this exponential distribution is 1/(lambda^2), or `r (1/(0.2)^2)` in this case.  The mean of the sample variations from our 1,000 simulations of 40 exponentials is `r mean(simedvars)`.  This is only off by `r library(scales); percent(1-mean(simedvars)/(1/((0.2)^2)))`.  
-
-Again, in a single simulation, the variation may vary from the theoretical variation, but over the course of many simulations, the variances gather in a normal distribution around the population variation.
-
-```{r, echo=FALSE, cache=TRUE, fig.height=3, fig.width=4, fig.cap="See appendix for supporting R code"}
-par(cex=.5)
-## Run 1,000 simulations with n=40.
-## Save the variation for each run.
-set.seed(100)
-simedvars <- c()
-for (i in 1:1000) {
-    thisrun <- rexp(40, 0.2)
-    simedvars <- c(simedvars, var(thisrun))
-}
-
-## Graph the variations for each run with a normal distribution curve
-hist(simedvars, main="Varation from single, n=40 rexp simulations",
-     xlab="var(rexp(40,0.2))", xlim=c(0, 2*mean(simedvars)))
-abline(v=(1/((0.2)^2)), col="red")
-curve(dnorm(x, mean=mean(simedvars), sd=sd(simedvars))*11000, add=TRUE, col="blue")
-```
-
-A normal probability plot shows us that the variations closely follow a normal distribution.
-
-```{r, echo=FALSE, fig.height=3, fig.width=4, fig.cap="See appendix for supporting R code"}
-par(cex=0.5)
-qqnorm(simedvars)
-qqline(simedvars)
-```
-
-And again, as in the mean, as more simulations are run and their variations averaged together, the mean of the sample variation approaches the population variation.
-
-```{r, echo=FALSE, fig.height=3, fig.width=4, fig.cap="See appendix for supporting R code"}
-par(cex=.5)
-## Run 1,000 simulations with n=40.
-## Keep a running mean of the standard devations of the simulations.
-set.seed(100)
-simedvars <- c()
-runningvarmean <- c()
-for (i in 1:1000) {
-    thisrun <- rexp(40, 0.2)
-    simedvars <- c(simedvars, var(thisrun))
-    runningvarmean <- c(runningvarmean, mean(simedvars))
-}
-
-## Graph the mean of the sample variances as it changes as more simulations are run
-## with a line representing the theoretical variance.
-plot(x=1:length(runningvarmean), y=runningvarmean, pch=20, type="n",
-     xlab="Number of simulations", ylab="Average of the sample variations",
-     main="Running mean of the sample variation")
-abline(h=(1/((0.2)^2)), col="red")
-lines(x=1:length(runningvarmean), y=runningvarmean)
-```
-
-\pagebreak
-
-## Appendix
+# Appendix
 
 Figure 1:
 
 ```{r, fig.show='hide'}
+par(mfrow=c(1,2), cex=.5)
 ## Histogram of 40 exponential values
 hist(rexp(40,0.2), xlab="")
 
@@ -177,36 +148,21 @@ hist(alldata, main="Histogram of 1000 simulations of rexp(40,0.2)", xlab="")
 Figure 2:
 
 ```{r, fig.show='hide'}
-## Run 1,000 simulations with n=40.
-## Save the mean for each run.
-set.seed(100)
-simedmeans <- c()
-for (i in 1:1000) {
-    thisrun <- rexp(40, 0.2)
-    simedmeans <- c(simedmeans, mean(thisrun))
-}
-
 ## Graph the means for each run with a normal distribution curve
+par(mfrow=c(1,2), cex=0.5)
 hist(simedmeans, main="Means from single, n=40 rexp simulations",
      xlab="mean(rexp(40,0.2))", xlim=c(0, 2*mean(simedmeans)))
 abline(v=1/0.2, col="red")
 curve(dnorm(x, mean=mean(simedmeans), sd=sd(simedmeans))*550, add=TRUE, col="blue")
+
+qqnorm(simedmeans)
+qqline(simedmeans)
 ```
 
 Figure 3:
 
 ``` {r, fig.show='hide'}
-## Run 1,000 simulations with n=40.
-## Keep a running mean of the means of the simulations.
-set.seed(100)
-simedmeans <- c()
-runningmean <- c()
-for (i in 1:1000) {
-    thisrun <- rexp(40, 0.2)
-    simedmeans <- c(simedmeans, mean(thisrun))
-    runningmean <- c(runningmean, mean(simedmeans))
-}
-
+par(cex=.5)
 ## Graph the mean of the sample means as it changes as more simulations are run
 ## with a line representing the theoretical mean.
 plot(x=1:length(runningmean), y=runningmean, pch=20, type="n",
@@ -214,46 +170,4 @@ plot(x=1:length(runningmean), y=runningmean, pch=20, type="n",
      main="Running mean of the sample means")
 abline(h=1/0.2, col="red")
 lines(x=1:length(runningmean), y=runningmean)
-```
-
-Figure 4:
-
-```{r, fig.show='hide'}
-## Run 1,000 simulations with n=40.
-## Save the variation for each run.
-set.seed(100)
-simedvars <- c()
-for (i in 1:1000) {
-    thisrun <- rexp(40, 0.2)
-    simedvars <- c(simedvars, var(thisrun))
-}
-
-## Graph the variations for each run with a normal distribution curve
-hist(simedvars, main="Variation from single, n=40 rexp simulations",
-     xlab="var(rexp(40,0.2))", xlim=c(0, 2*mean(simedvars)))
-abline(v=(1/0.2)^2, col="red")
-curve(dnorm(x, mean=mean(simedvars), sd=sd(simedvars))*11000, add=TRUE, col="blue")
-```
-
-Figure 5:
-
-```{r, fig.show='hide'}
-## Run 1,000 simulations with n=40.
-## Keep a running mean of the variances of the simulations.
-set.seed(100)
-simedvars <- c()
-runningvarmean <- c()
-for (i in 1:1000) {
-    thisrun <- rexp(40, 0.2)
-    simedvars <- c(simedvars, var(thisrun))
-    runningvarmean <- c(runningvarmean, mean(simedvars))
-}
-
-## Graph the mean of the sample variances as it changes as more simulations are run
-## with a line representing the theoretical variance.
-plot(x=1:length(runningvarmean), y=runningvarmean, pch=20, type="n",
-     xlab="Number of simulations", ylab="Average of the sample variances",
-     main="Running mean of the sample variances")
-abline(h=(1/0.2)^2, col="red")
-lines(x=1:length(runningvarmean), y=runningvarmean)
 ```
