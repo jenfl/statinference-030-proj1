@@ -34,8 +34,7 @@ hist(alldata, main="Histogram of 1000 simulations of rexp(40,0.2)", xlab="")
 
 The distribution of sample means from the simulations closely follows a normal distribution.
 
-```{r, echo=FALSE, fig.height=3, fig.width=4, fig.cap="See appendix for supporting R code"}
-par(cex=.5)
+```{r, echo=FALSE, fig.height=3, fig.cap="See appendix for supporting R code", fig.show='hold'}
 ## Run 1,000 simulations with n=40.
 ## Save the mean for each run.
 set.seed(100)
@@ -46,10 +45,14 @@ for (i in 1:1000) {
 }
 
 ## Graph the means for each run with a normal distribution curve
+par(mfrow=c(1,2), cex=0.5)
 hist(simedmeans, main="Means from single, n=40 rexp simulations",
      xlab="mean(rexp(40,0.2))", xlim=c(0, 2*mean(simedmeans)))
 abline(v=1/0.2, col="red")
 curve(dnorm(x, mean=mean(simedmeans), sd=sd(simedmeans))*550, add=TRUE, col="blue")
+
+qqnorm(simedmeans)
+qqline(simedmeans)
 ```
 
 While the mean of a single, n=40 simulation may vary from the population mean, as we gather more means and average them together, we can see the value approach the population mean.
@@ -95,11 +98,11 @@ for (i in 1:1000) {
 }
 ```
 
-The theoretical variance of this exponential distribution is (1/lambda)^2, or `r (1/0.2)^2` in this case.  The mean of the sample variations from our 1,000 simulations of 40 exponentials is `r mean(simedvars)`.  This is only off by `r library(scales); percent(1-mean(simedvars)/(1/0.2)^2)`.  
+The theoretical variation of this exponential distribution is 1/(lambda^2), or `r (1/(0.2)^2)` in this case.  The mean of the sample variations from our 1,000 simulations of 40 exponentials is `r mean(simedvars)`.  This is only off by `r library(scales); percent(1-mean(simedvars)/(1/((0.2)^2)))`.  
 
 Again, in a single simulation, the variation may vary from the theoretical variation, but over the course of many simulations, the variances gather in a normal distribution around the population variation.
 
-```{r, echo=FALSE, fig.height=3, fig.width=4, fig.cap="See appendix for supporting R code"}
+```{r, echo=FALSE, cache=TRUE, fig.height=3, fig.width=4, fig.cap="See appendix for supporting R code"}
 par(cex=.5)
 ## Run 1,000 simulations with n=40.
 ## Save the variation for each run.
@@ -111,18 +114,26 @@ for (i in 1:1000) {
 }
 
 ## Graph the variations for each run with a normal distribution curve
-hist(simedvars, main="Variation from single, n=40 rexp simulations",
+hist(simedvars, main="Varation from single, n=40 rexp simulations",
      xlab="var(rexp(40,0.2))", xlim=c(0, 2*mean(simedvars)))
-abline(v=(1/0.2)^2, col="red")
+abline(v=(1/((0.2)^2)), col="red")
 curve(dnorm(x, mean=mean(simedvars), sd=sd(simedvars))*11000, add=TRUE, col="blue")
 ```
 
-And again, as in the mean, as more simulations are run and their variances averaged together, the mean of the sample variance approaches the population variance.
+A normal probability plot shows us that the variations closely follow a normal distribution.
+
+```{r, echo=FALSE, fig.height=3, fig.width=4, fig.cap="See appendix for supporting R code"}
+par(cex=0.5)
+qqnorm(simedvars)
+qqline(simedvars)
+```
+
+And again, as in the mean, as more simulations are run and their variations averaged together, the mean of the sample variation approaches the population variation.
 
 ```{r, echo=FALSE, fig.height=3, fig.width=4, fig.cap="See appendix for supporting R code"}
 par(cex=.5)
 ## Run 1,000 simulations with n=40.
-## Keep a running mean of the variances of the simulations.
+## Keep a running mean of the standard devations of the simulations.
 set.seed(100)
 simedvars <- c()
 runningvarmean <- c()
@@ -135,9 +146,9 @@ for (i in 1:1000) {
 ## Graph the mean of the sample variances as it changes as more simulations are run
 ## with a line representing the theoretical variance.
 plot(x=1:length(runningvarmean), y=runningvarmean, pch=20, type="n",
-     xlab="Number of simulations", ylab="Average of the sample variances",
-     main="Running mean of the sample variances")
-abline(h=(1/0.2)^2, col="red")
+     xlab="Number of simulations", ylab="Average of the sample variations",
+     main="Running mean of the sample variation")
+abline(h=(1/((0.2)^2)), col="red")
 lines(x=1:length(runningvarmean), y=runningvarmean)
 ```
 
