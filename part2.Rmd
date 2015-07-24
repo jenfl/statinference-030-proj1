@@ -1,0 +1,160 @@
+---
+title: "A Statistical Look at R’s ToothGrowth Data Set"
+author: "Jen Becker"
+date: "July 23, 2015"
+output: 
+    pdf_document:
+        fig_caption: yes
+---
+
+## Exploratory Data Analysis
+
+The ToothGrowth data set contains a 60x3 data frame containing the results of testing dose and delivery method of vitamin C on the tooth length of guinea pigs.  The data frame contains columns for the length of the tooth, the supplement used to deliver the vitamin C (orange juice or ascorbic acid), and the dose of vitamin C (0.5, 1.0, or 2.0 milligrams).  
+
+There are 10 length measurements for each combination of dose and supplement.  
+
+Tooth length varies from 4.20 to 33.90, with a mean of 18.  A summary for each type of supplement shows that, at first glance, tooth length seems to be greater with orange juice (22.7 vs 16.5).  See Appendix for supporting R code.
+
+A quick graph shows that tooth length increases as the vitamin C dose increases.  We can also see that it appears that the orange juice supplement results in longer teeth for lower doses of vitamin C, while the effects seem more equal at the highest dose.
+
+```{r, echo=FALSE, cache=TRUE, fig.width=5, fig.height=4, fig.cap="See Appendix for supporting R code"}
+library(plyr); library(ggplot2)
+tgmean <- ddply(ToothGrowth, .(dose, supp), summarize, 
+                mean=mean(len), 
+                confmin=t.test(len)$conf.int[1], 
+                confmax=t.test(len)$conf.int[2])
+tgsd <- ddply(ToothGrowth, .(dose, supp), summarize, sd=sd(len))
+g <- ggplot(ToothGrowth, aes(dose, len)) +
+    geom_point(data=ToothGrowth, mapping=aes(x=dose, y=len, col=supp)) +
+    geom_line(data=tgmean, mapping=aes(x=dose, y=mean, col=supp)) +
+    theme(text = element_text(size = 7)) +
+    xlab("Dose") + ylab("Length") + ggtitle("Dose vs Length by Supplement with Means")
+g
+```
+
+## Comparisons between doses of vitamin C
+
+We first analyze whether increasing doses of vitamin C are associated with longer teeth, regardless of the supplement used to deliver it.
+
+The null hypothesis is that there is no difference in tooth growth as the dose of vitamin C is varied.
+
+To discover this, we construct 95% confidence intervals using t-tests, comparing the means of length for each dose (ignoring the supplement).
+
+```{r}
+t.test(ToothGrowth[ToothGrowth$dose==0.5,"len"], ToothGrowth[ToothGrowth$dose==1.0, "len"])$conf.int
+t.test(ToothGrowth[ToothGrowth$dose==1.0,"len"], ToothGrowth[ToothGrowth$dose==2.0, "len"])$conf.int
+```
+
+In both cases, the confidence intervals for the difference in mean do not include 0, so we reject the null hypthesis that there is not a statistical difference in tooth growth associated with different doses of vitamin C.
+
+```{r, echo=FALSE, fig.width=3, fig.height=3, fig.cap="See Appendix for supporting R code"}
+library(plyr); library(ggplot2)
+doseonly <- ddply(ToothGrowth, .(dose), summarize, 
+                  mean=mean(len), 
+                  confmin=t.test(len)$conf.int[1], 
+                  confmax=t.test(len)$conf.int[2])
+g1 <- ggplot() +
+    geom_line(data=doseonly, mapping=aes(x=dose, y=mean)) +
+    geom_errorbar(data=doseonly, width=0.1,
+                  mapping=aes(x=dose, ymin=confmin, ymax=confmax)) +
+    theme(text = element_text(size = 7)) +
+    xlab("Dose") + ylab("Length") + ggtitle("Dose vs Length with 95% Confidence Intervals")
+g1
+```
+
+## Comparisons between supplements within a dose
+
+Another method of analyzing this data is to compare the differences in tooth length between the 2 supplements within a given dose.  This will give us a clue as to whether different supplements may have an impact on the effectiveness of vitamin C on tooth growth.
+
+The null hypothesis is that there is no difference in tooth growth between supplements if the dose remains the same.
+
+To discover this, we construct 95% confidence intervals using t-tests, comparing the means of length for each dose between supplements.  
+
+Orange juice vs Ascorbic acid, 0.5 milligram dose:
+```{r, echo=FALSE}
+t.test(ToothGrowth[ToothGrowth$supp=="VC" & ToothGrowth$dose==0.5,"len"], 
+       ToothGrowth[ToothGrowth$supp=="OJ" & ToothGrowth$dose==0.5,"len"])$conf.int
+```
+
+Orange juice vs Ascorbic acid, 1.0 milligram dose:
+```{r, echo=FALSE}
+t.test(ToothGrowth[ToothGrowth$supp=="VC" & ToothGrowth$dose==1.0,"len"], 
+       ToothGrowth[ToothGrowth$supp=="OJ" & ToothGrowth$dose==1.0,"len"])$conf.int
+```
+
+Orange juice vs Ascorbic acid, 2.0 milligram dose:
+````{r, echo=FALSE}
+t.test(ToothGrowth[ToothGrowth$supp=="VC" & ToothGrowth$dose==2.0,"len"], 
+       ToothGrowth[ToothGrowth$supp=="OJ" & ToothGrowth$dose==2.0,"len"])$conf.int
+```
+
+By looking at these results, we can reject the null hypothesis that the supplement does not affect tooth growth for doses equal to 0.5 and 1.0 milligrams, but we cannot reject the null hypothesis for doses equal to 2.0 milligrams.
+
+```{r, echo=FALSE, fig.width=5, fig.height=4, fig.cap="See Appendix for supporting R code"}
+library(ggplot2)
+g2 <- ggplot() + 
+    geom_line(data=tgmean, mapping=aes(x=dose, y=mean, col=supp))+ 
+    geom_errorbar(data=tgmean, width=0.1,
+                  mapping=aes(x=dose, ymin=confmin, ymax=confmax, col=supp)) +
+    theme(text = element_text(size = 7)) +
+    xlab("Dose") + ylab("Length") + ggtitle("95% Confidence Intervals for Tooth Growth")
+g2
+```
+
+# Appendix
+
+## Exploratory data anaylsis code
+
+```{r}
+str(ToothGrowth)
+table(ToothGrowth$supp, ToothGrowth$dose)
+summary(ToothGrowth$len)
+summary(ToothGrowth[ToothGrowth$supp == "OJ",]$len)
+summary(ToothGrowth[ToothGrowth$supp == "VC",]$len)
+```
+
+## Figure 1
+
+```{r, fig.show='hide'}
+library(plyr); library(ggplot2)
+tgmean <- ddply(ToothGrowth, .(dose, supp), summarize, 
+                mean=mean(len), 
+                confmin=t.test(len)$conf.int[1], 
+                confmax=t.test(len)$conf.int[2])
+tgsd <- ddply(ToothGrowth, .(dose, supp), summarize, sd=sd(len))
+g <- ggplot(ToothGrowth, aes(dose, len)) +
+    geom_point(data=ToothGrowth, mapping=aes(x=dose, y=len, col=supp)) +
+    geom_line(data=tgmean, mapping=aes(x=dose, y=mean, col=supp)) +
+    theme(text = element_text(size = 7)) +
+    xlab("Dose") + ylab("Length") + ggtitle("Dose vs Length by Supplement with Means")
+g
+```
+
+## Figure 2
+
+```{r, fig.show='hide'}
+library(plyr); library(ggplot2)
+doseonly <- ddply(ToothGrowth, .(dose), summarize, 
+                  mean=mean(len), 
+                  confmin=t.test(len)$conf.int[1], 
+                  confmax=t.test(len)$conf.int[2])
+g1 <- ggplot() +
+    geom_line(data=doseonly, mapping=aes(x=dose, y=mean)) +
+    geom_errorbar(data=doseonly, width=0.1,
+                  mapping=aes(x=dose, ymin=confmin, ymax=confmax)) +
+    theme(text = element_text(size = 7)) +
+    xlab("Dose") + ylab("Length") + ggtitle("Dose vs Length with 95% Confidence Intervals")
+g1
+```
+
+## Figure 3
+```{r, fig.show='hide'}
+library(ggplot2)
+g2 <- ggplot() + 
+    geom_line(data=tgmean, mapping=aes(x=dose, y=mean, col=supp))+ 
+    geom_errorbar(data=tgmean, width=0.1,
+                  mapping=aes(x=dose, ymin=confmin, ymax=confmax, col=supp)) +
+    theme(text = element_text(size = 7)) +
+    xlab("Dose") + ylab("Length") + ggtitle("95% Confidence Intervals for Tooth Growth")
+g2
+```
