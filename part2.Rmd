@@ -34,7 +34,7 @@ g
 
 ## Comparisons between doses of vitamin C
 
-We first analyze whether increasing doses of vitamin C are associated with longer teeth, regardless of the supplement used to deliver it.
+We first analyze whether increasing doses of vitamin C are associated with longer teeth, regardless of the supplement used to deliver it.  To do this, we assume that the samples are independent and identically distributed.
 
 The null hypothesis is that there is no difference in tooth growth as the dose of vitamin C is varied.
 
@@ -64,7 +64,7 @@ g1
 
 ## Comparisons between supplements within a dose
 
-Another method of analyzing this data is to compare the differences in tooth length between the 2 supplements within a given dose.  This will give us a clue as to whether different supplements may have an impact on the effectiveness of vitamin C on tooth growth.
+Another method of analyzing this data is to compare the differences in tooth length between the 2 supplements within a given dose.  This will give us a clue as to whether different supplements may have an impact on the effectiveness of vitamin C on tooth growth.  To do this, we assume that the samples are independent and identically distributed.
 
 The null hypothesis is that there is no difference in tooth growth between supplements if the dose remains the same.
 
