@@ -38,7 +38,7 @@ We first analyze whether increasing doses of vitamin C are associated with longe
 
 The null hypothesis is that there is no difference in tooth growth as the dose of vitamin C is varied.
 
-To discover this, we construct 95% confidence intervals using t-tests, comparing the means of length for each dose (ignoring the supplement).
+To discover this, we construct 95% confidence intervals using t-tests, comparing the differences in length for each dose (ignoring the supplement).
 
 ```{r}
 t.test(ToothGrowth[ToothGrowth$dose==0.5,"len"], ToothGrowth[ToothGrowth$dose==1.0, "len"])$conf.int
@@ -68,8 +68,8 @@ Another method of analyzing this data is to compare the differences in tooth len
 
 The null hypothesis is that there is no difference in tooth growth between supplements if the dose remains the same.
 
-To discover this, we construct 95% confidence intervals using t-tests, comparing the means of length for each dose between supplements.  
-
+To discover this, we construct 95% confidence intervals using t-tests, comparing the differences in length for each dose between supplements.  
+\newpage
 Orange juice vs Ascorbic acid, 0.5 milligram dose:
 ```{r, echo=FALSE}
 t.test(ToothGrowth[ToothGrowth$supp=="VC" & ToothGrowth$dose==0.5,"len"], 
@@ -117,11 +117,13 @@ summary(ToothGrowth[ToothGrowth$supp == "VC",]$len)
 
 ```{r, fig.show='hide'}
 library(plyr); library(ggplot2)
+## Create a data frame that also includes the mean and confidence intervals
+## per dose/supplement
 tgmean <- ddply(ToothGrowth, .(dose, supp), summarize, 
                 mean=mean(len), 
                 confmin=t.test(len)$conf.int[1], 
                 confmax=t.test(len)$conf.int[2])
-tgsd <- ddply(ToothGrowth, .(dose, supp), summarize, sd=sd(len))
+## Plot the dose vs supplement with length points and lines connecting the means
 g <- ggplot(ToothGrowth, aes(dose, len)) +
     geom_point(data=ToothGrowth, mapping=aes(x=dose, y=len, col=supp)) +
     geom_line(data=tgmean, mapping=aes(x=dose, y=mean, col=supp)) +
@@ -134,10 +136,12 @@ g
 
 ```{r, fig.show='hide'}
 library(plyr); library(ggplot2)
+## Create a data frame with means and confidence intervals per dose only
 doseonly <- ddply(ToothGrowth, .(dose), summarize, 
                   mean=mean(len), 
                   confmin=t.test(len)$conf.int[1], 
                   confmax=t.test(len)$conf.int[2])
+## Plot dose vs length means with confidence intervals
 g1 <- ggplot() +
     geom_line(data=doseonly, mapping=aes(x=dose, y=mean)) +
     geom_errorbar(data=doseonly, width=0.1,
@@ -150,6 +154,7 @@ g1
 ## Figure 3
 ```{r, fig.show='hide'}
 library(ggplot2)
+## Plot dose vs length with means and confidence intervals per supplement
 g2 <- ggplot() + 
     geom_line(data=tgmean, mapping=aes(x=dose, y=mean, col=supp))+ 
     geom_errorbar(data=tgmean, width=0.1,

@@ -7,7 +7,7 @@ output:
         fig_caption: yes
 ---
 
-In this paper, I will use R's exponential distribution to illustrate the predictions of the Central Limit Theorem, namely that the distribution of sample means from a population is nearly normal, even if the population distribution is not normal.  Also, that the mean of sample variance approximates the population's variance with increasing accuracy as the number of samples increases.
+In this paper, I will use R's exponential distribution to illustrate the predictions of the Central Limit Theorem, namely that the distribution of sample means from a population is nearly normal and centered around the population mean, even if the population distribution is not normal.  Also, that the sample variance approximates the population's variance.
 
 To simulate the exponential distribution in R, we use rexp(n, lambda) with n=40 and lambda=0.2.  Data from a single run will generally resemble an exponential distribution.  If we plot the data from 1,000 simulations of 40 exponentials, we see a much more accurate depiction of the exponential distribution.
 
@@ -30,9 +30,9 @@ hist(alldata, main="Histogram of 1000 simulations of rexp(40,0.2)", xlab="")
 
 ## R code for simulation of exponential distribution
 
-To run our analysis, we collect a large number of exponential distributions.  For each of 1,000 runs, we generate 40 numbers with an exponential distribution and calculate the mean and variance of that sample.  On each run, we also calculate and store a running mean of means -- averaging together the means we've collected so far.
+To run our analysis, we collect a large number of exponential distributions.  For each of 1,000 runs, we generate 40 numbers with an exponential distribution and calculate the mean and variance of that sample.  On each run, we also calculate and store a running mean of means -- averaging together the means we've collected so far.  (See appendix for exact R code.)
 
-```{r, echo=TRUE, cache=TRUE}
+```{r, echo=FALSE, cache=TRUE}
 ## Run 1,000 simulations with n=40.
 
 set.seed(100)        # For reproducibility
@@ -126,7 +126,27 @@ lines(x=1:length(runningmean), y=runningmean)
 
 # Appendix
 
-Figure 1:
+## R Code for simulations
+
+```{r, echo=TRUE, cache=FALSE}
+## Run 1,000 simulations with n=40.
+
+set.seed(100)        # For reproducibility
+lambda <- 0.2        # Lambda value for rexp
+n <- 40              # Number of values to generate by rexp
+simedvars <- c()     # Variance of each simulation
+simedmeans <- c()    # Mean of each simulation
+runningmean <- c()   # Running mean of the means of each simulation
+
+for (i in 1:1000) {
+    thisrun <- rexp(n, lambda)  # Run the simulation, n=40, lambda=0.2
+    simedvars <- c(simedvars, var(thisrun))
+    simedmeans <- c(simedmeans, mean(thisrun))
+    runningmean <- c(runningmean, mean(simedmeans))
+}
+```
+
+## Figure 1:
 
 ```{r, fig.show='hide'}
 par(mfrow=c(1,2), cex=.5)
@@ -145,7 +165,7 @@ for (i in 1:1000) {
 hist(alldata, main="Histogram of 1000 simulations of rexp(40,0.2)", xlab="")
 ```
 
-Figure 2:
+## Figure 2:
 
 ```{r, fig.show='hide'}
 ## Graph the means for each run with a normal distribution curve
@@ -159,7 +179,7 @@ qqnorm(simedmeans)
 qqline(simedmeans)
 ```
 
-Figure 3:
+## Figure 3:
 
 ``` {r, fig.show='hide'}
 par(cex=.5)
